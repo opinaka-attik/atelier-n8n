@@ -1,0 +1,60 @@
+{
+  "name": "05 — Data Pipeline (fetch → transform → output)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] }
+      },
+      "id": "node-schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://jsonplaceholder.typicode.com/posts",
+        "options": {}
+      },
+      "id": "node-fetch",
+      "name": "Fetch Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items\n  .filter(item => item.json.userId <= 3)\n  .map(item => ({\n    json: {\n      id: item.json.id,\n      userId: item.json.userId,\n      titre: item.json.title.substring(0, 50),\n      longueur_body: item.json.body.length,\n      traite_le: new Date().toISOString()\n    }\n  }));"
+      },
+      "id": "node-transform",
+      "name": "Transformer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst stats = {\n  total: items.length,\n  par_user: {},\n  longueur_moyenne: Math.round(items.reduce((acc, i) => acc + i.json.longueur_body, 0) / items.length)\n};\nitems.forEach(i => {\n  const uid = 'user_' + i.json.userId;\n  stats.par_user[uid] = (stats.par_user[uid] || 0) + 1;\n});\nreturn [{ json: stats }];"
+      },
+      "id": "node-aggregate",
+      "name": "Agréger stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Fetch Posts", "type": "main", "index": 0 }]]
+    },
+    "Fetch Posts": {
+      "main": [[{ "node": "Transformer", "type": "main", "index": 0 }]]
+    },
+    "Transformer": {
+      "main": [[{ "node": "Agréger stats", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": ["atelier", "niveau-3", "data", "pipeline"]
+}

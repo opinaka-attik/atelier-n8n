@@ -1,0 +1,79 @@
+{
+  "name": "04 — AI Summarizer (Groq)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summarize",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Authorization", "value": "Bearer YOUR_GROQ_API_KEY" }]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "model", "value": "llama3-8b-8192" },
+            { "name": "messages", "value": "=[{\"role\":\"system\",\"content\":\"Tu es un assistant qui résume en 3 phrases max en français.\"},{\"role\":\"user\",\"content\":\"Résume ce texte : \" + $json.body.texte}]" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-groq",
+      "name": "Groq LLM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst resume = response.choices[0].message.content;\nreturn [{ json: { resume, tokens: response.usage.total_tokens } }];"
+      },
+      "id": "node-extract",
+      "name": "Extraire résumé",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "node-respond",
+      "name": "Réponse",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Groq LLM", "type": "main", "index": 0 }]]
+    },
+    "Groq LLM": {
+      "main": [[{ "node": "Extraire résumé", "type": "main", "index": 0 }]]
+    },
+    "Extraire résumé": {
+      "main": [[{ "node": "Réponse", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": ["atelier", "niveau-2", "ai", "groq"]
+}

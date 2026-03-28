@@ -1,0 +1,49 @@
+{
+  "name": "02 — HTTP Request Météo",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "id": "node-schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://wttr.in/Montpellier?format=j1",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "node-http",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst current = data.current_condition[0];\nreturn [{\n  json: {\n    ville: 'Montpellier',\n    temperature_c: current.temp_C,\n    ressenti_c: current.FeelsLikeC,\n    humidite: current.humidity,\n    description: current.weatherDesc[0].value,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-code",
+      "name": "Extraire données",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "HTTP Request", "type": "main", "index": 0 }]]
+    },
+    "HTTP Request": {
+      "main": [[{ "node": "Extraire données", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": ["atelier", "niveau-1", "http"]
+}

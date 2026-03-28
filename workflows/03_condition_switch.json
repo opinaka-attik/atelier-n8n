@@ -1,0 +1,72 @@
+{
+  "name": "03 — Condition & Switch",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "classify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [{
+            "value1": "={{ $json.body.score }}",
+            "operation": "larger",
+            "value2": 70
+          }]
+        }
+      },
+      "id": "node-if",
+      "name": "Score > 70 ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"statut\": \"admis\", \"score\": {{$json.body.score}}, \"message\": \"Félicitations !\"}",
+        "options": {}
+      },
+      "id": "node-admis",
+      "name": "Réponse Admis",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"statut\": \"refus\", \"score\": {{$json.body.score}}, \"message\": \"Score insuffisant.\"}",
+        "options": {}
+      },
+      "id": "node-refuse",
+      "name": "Réponse Refusé",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [750, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Score > 70 ?", "type": "main", "index": 0 }]]
+    },
+    "Score > 70 ?": {
+      "main": [
+        [{ "node": "Réponse Admis", "type": "main", "index": 0 }],
+        [{ "node": "Réponse Refusé", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "tags": ["atelier", "niveau-2", "condition"]
+}
